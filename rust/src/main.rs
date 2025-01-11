@@ -1,12 +1,12 @@
 mod parser;
 mod constant;
 
+use base64::{engine::general_purpose, Engine as _};
 use ring::aead::{self, Aad, LessSafeKey, Nonce, UnboundKey};
 use ring::digest;
+use serde_json::Value;
 use std::env;
 use std::time::{SystemTime, UNIX_EPOCH};
-use base64::decode;
-use serde_json::Value;
 
 const TRANSIT_TIME_BUCKET: u64 = 60; // Default time bucket
 const TRANSIT_KEY_LENGTH: usize = 32; // Use 32 for AES-256
@@ -35,7 +35,7 @@ pub fn transit_decrypt(ciphertext: &str) -> Result<Value, String> {
     let aes_key = &hash_output.as_ref()[..TRANSIT_KEY_LENGTH];
 
     // Decode the base64-encoded ciphertext
-    let ciphertext_bytes = decode(ciphertext).map_err(|_| "Failed to decode base64 ciphertext")?;
+    let ciphertext_bytes = general_purpose::STANDARD.decode(ciphertext).unwrap();
 
     // Ensure the ciphertext is long enough
     if ciphertext_bytes.len() < 12 {
@@ -55,10 +55,6 @@ pub fn transit_decrypt(ciphertext: &str) -> Result<Value, String> {
     // Decrypt the data
     let mut binding = encrypted_data.to_vec();
     let decrypted_data = key.open_in_place(nonce, Aad::empty(), &mut binding).unwrap();
-
-    // let decrypted_data = key
-    //     .open_in_place(nonce, Aad::empty(), &mut encrypted_data.to_vec())
-    //     .map_err(|_| "Decryption failed")?;
 
     // Parse the decrypted data as JSON
     let decrypted_json: Value = serde_json::from_slice(decrypted_data)
