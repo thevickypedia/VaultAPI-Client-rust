@@ -1,38 +1,15 @@
-
 use crate::constant;
+
+const TRANSIT_KEY_LENGTH: usize = 32;
+const TRANSIT_TIME_BUCKET: u64 = 60;
 
 pub struct Config {
     pub cipher: String,
     pub apikey: String,
-    pub debug: bool,
-    pub utc: bool,
+    pub transit_key_length: usize,
+    pub transit_time_bucket: u64,
 }
 
-
-/// Extracts the env var by key and parses it as a `bool`
-///
-/// # Arguments
-///
-/// * `key` - Key for the environment variable.
-///
-/// # Returns
-///
-/// Returns an `Option<bool>` if the value is available.
-///
-/// # Panics
-///
-/// If the value is present, but it is an invalid data-type.
-fn parse_bool(key: &str) -> Option<bool> {
-    match std::env::var(key) {
-        Ok(val) => match val.parse() {
-            Ok(parsed) => Some(parsed),
-            Err(_) => {
-                panic!("\n{}\n\texpected bool, received '{}' [value=invalid]\n", key, val);
-            }
-        },
-        Err(_) => None,
-    }
-}
 
 /// Parses and returns the command-line arguments.
 ///
@@ -45,8 +22,6 @@ pub fn arguments(metadata: &constant::MetaData) -> Config {
     let mut version = false;
     let mut env_file = String::new();
     let mut cipher = String::new();
-    let mut debug_flag: Option<bool> = None;
-    let mut utc_flag: Option<bool> = None;
 
     // Loop through the command-line arguments and parse them.
     let mut i = 1; // Start from the second argument (args[0] is the program name).
@@ -81,14 +56,6 @@ pub fn arguments(metadata: &constant::MetaData) -> Config {
                     std::process::exit(1)
                 }
             }
-            "--debug" => {
-                i += 1; // Move to the next argument.
-                debug_flag = Some(true);
-            }
-            "--utc" => {
-                i += 1; // Move to the next argument.
-                utc_flag = Some(true);
-            }
             _ => {
                 println!("Unknown argument: {}", args[i]);
                 std::process::exit(1)
@@ -109,14 +76,6 @@ pub fn arguments(metadata: &constant::MetaData) -> Config {
         .unwrap_or_default()
         .join(env_file);
     let _ = dotenv::from_path(env_file_path.as_path());
-    let debug = match debug_flag {
-        Some(_) => true,
-        None => parse_bool("debug").unwrap_or(false),
-    };
-    let utc = match utc_flag {
-        Some(_) => true,
-        None => parse_bool("utc").unwrap_or(false),
-    };
     // Retrieve the API key from the environment
     let apikey = match std::env::var("APIKEY") {
         Ok(value) => value,
@@ -125,10 +84,18 @@ pub fn arguments(metadata: &constant::MetaData) -> Config {
             std::process::exit(1)
         }
     };
+    let transit_key_length = match std::env::var("TRANSMIT_KEY_LENGTH") {
+        Ok(value) => value.parse::<usize>().unwrap_or(TRANSIT_KEY_LENGTH),
+        Err(_) => TRANSIT_KEY_LENGTH,
+    };
+    let transit_time_bucket = match std::env::var("TRANSIT_TIME_BUCKET") {
+        Ok(value) => value.parse::<u64>().unwrap_or(TRANSIT_TIME_BUCKET),
+        Err(_) => TRANSIT_TIME_BUCKET
+    };
     Config {
         cipher,
         apikey,
-        debug,
-        utc
+        transit_key_length,
+        transit_time_bucket,
     }
 }

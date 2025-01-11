@@ -1,8 +1,5 @@
 mod parser;
 mod constant;
-use std::io::Write;
-
-use chrono::{DateTime, Local};
 
 use base64::{engine::general_purpose, Engine as _};
 use ring::aead::{self, Aad, LessSafeKey, Nonce, UnboundKey};
@@ -10,43 +7,6 @@ use ring::digest;
 use serde_json::Value;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-const TRANSIT_KEY_LENGTH: usize = 32;
-const TRANSIT_TIME_BUCKET: u64 = 60;
-
-
-/// Initializes the logger based on the provided debug flag and cargo information.
-///
-/// # Arguments
-///
-/// * `debug` - A flag indicating whether to enable debug mode for detailed logging.
-/// * `crate_name` - Name of the crate loaded during compile time.
-fn init_logger(debug: bool, utc: bool, crate_name: &String) {
-    if debug {
-        std::env::set_var("RUST_LOG", format!("{}=debug", crate_name));
-        std::env::set_var("RUST_BACKTRACE", "1");
-    } else {
-        // Set Actix logging to warning mode since it becomes too noisy when streaming large files
-        std::env::set_var("RUST_LOG", format!("{}=info", crate_name));
-        std::env::set_var("RUST_BACKTRACE", "0");
-    }
-    if utc {
-        env_logger::init();
-    } else {
-        env_logger::Builder::from_default_env()
-            .format(|buf, record| {
-                let local_time: DateTime<Local> = Local::now();
-                writeln!(
-                    buf,
-                    "[{} {} {}] - {}",
-                    local_time.format("%Y-%m-%dT%H:%M:%SZ"),
-                    record.level(),
-                    record.target(),
-                    record.args()
-                )
-            })
-            .init();
-    }
-}
 
 /// Decrypts a transit-encrypted payload.
 ///
@@ -55,18 +15,23 @@ fn init_logger(debug: bool, utc: bool, crate_name: &String) {
 ///
 /// # Returns
 /// * A `Result<Value, String>` containing the decrypted JSON payload or an error message.
-pub fn transit_decrypt(apikey: &String, ciphertext: &String) -> Result<Value, String> {
+pub fn transit_decrypt(
+    apikey: &String,
+    ciphertext: &String,
+    transit_key_length: usize,
+    transit_time_bucket: u64
+) -> Result<Value, String> {
     // Compute the current epoch bucket
     let epoch = match SystemTime::now().duration_since(UNIX_EPOCH) {
         Ok(duration) => duration.as_secs(),
         Err(_) => return Err("System time is before the UNIX epoch".into())
     };
-    let epoch = epoch / TRANSIT_TIME_BUCKET;
+    let epoch = epoch / transit_time_bucket;
 
     // Derive the AES key using SHA-256
     let hash_input = format!("{}.{}", epoch, apikey);
     let hash_output = digest::digest(&digest::SHA256, hash_input.as_bytes());
-    let aes_key = &hash_output.as_ref()[..TRANSIT_KEY_LENGTH];
+    let aes_key = &hash_output.as_ref()[..transit_key_length];
 
     // Decode the base64-encoded ciphertext
     let ciphertext_bytes = match general_purpose::STANDARD.decode(ciphertext) {
@@ -113,11 +78,10 @@ pub fn transit_decrypt(apikey: &String, ciphertext: &String) -> Result<Value, St
 pub fn decrypt_vault_secret() -> Result<Value, String> {
     let metadata = constant::build_info();
     let config = parser::arguments(&metadata);
-    // Instantiate custom logger
-    init_logger(
-        config.debug,
-        config.utc,
-        &metadata.crate_name
-    );
-    transit_decrypt(&config.apikey, &config.cipher)
+    transit_decrypt(
+        &config.apikey,
+        &config.cipher,
+        config.transit_key_length,
+        config.transit_time_bucket
+    )
 }
