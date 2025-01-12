@@ -28,6 +28,14 @@ fn auth_headers(apikey: &String) -> HashMap<String, String> {
     headers
 }
 
+
+/// Constructs the required fields to make a request.
+///
+/// # Arguments
+/// * `config` - Config object to retrieve environment variables, and command line arguments.
+///
+/// # Returns
+/// * A `RequestMaterials` struct containing auth headers, query parameters, and the request URL.
 fn create_request_materials(config: &Config) -> RequestMaterials {
     // Add URL parameters
     let mut url = String::new();
@@ -61,7 +69,7 @@ fn create_request_materials(config: &Config) -> RequestMaterials {
     }
 }
 
-/// Function to get `get-secret` using a particular `key` or comma separated list of keys.
+/// Function to create a server request and process the response.
 ///
 /// # Arguments
 /// * `config` - Config object to retrieve environment variables, and command line arguments.
@@ -99,6 +107,15 @@ pub fn server_connection(config: &Config) -> Result<Value, String> {
     exit(1)
 }
 
+/// Function to make a `GET` request to the server.
+///
+/// # Arguments
+/// * `server_url` - Server URL.
+/// * `headers` - Authentication headers.
+/// * `params` - Query parameters.
+///
+/// # Returns
+/// * A `Value` object containing the server response.
 pub fn make_request(
     server_url: &str,
     headers: Option<HashMap<String, String>>,

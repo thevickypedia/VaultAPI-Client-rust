@@ -1,14 +1,15 @@
-mod parser;
-mod constant;
+pub mod parser;
+pub mod constant;
 mod request;
 pub mod decipher;
 
 use serde_json::Value;
 
-
-pub fn decrypt_vault_secret() -> Result<Value, String> {
-    let metadata = constant::build_info();
-    let config = parser::arguments(&metadata);
+/// Decrypts the ciphered text into JSON object.
+///
+/// # Returns
+/// * A `Result<Value, String>` containing deciphered content.
+pub fn decrypt_vault_secret(config: parser::Config) -> Result<Value, String> {
     if config.cipher.is_empty() {
         return request::server_connection(&config);
     }

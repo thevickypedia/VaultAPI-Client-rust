@@ -18,7 +18,7 @@ pub struct Config {
 
 
 fn get_env(key: &str, default: &str) -> String {
-    let value = match std::env::var(key) {
+    match std::env::var(key) {
         Ok(value) => value,
         Err(_) => {
             if !default.is_empty() {
@@ -27,15 +27,13 @@ fn get_env(key: &str, default: &str) -> String {
             println!("{:} environment variable not set", key);
             std::process::exit(1)
         }
-    };
-    value
+    }
 }
 
 
 /// Parses and returns the command-line arguments and environment variables.
 ///
 /// # Returns
-///
 /// A String notion of the argument, `env_file` if present.
 pub fn arguments(metadata: &constant::MetaData) -> Config {
     let args: Vec<String> = std::env::args().collect();
@@ -139,7 +137,7 @@ pub fn arguments(metadata: &constant::MetaData) -> Config {
     let _ = dotenv::from_path(env_file_path.as_path());
     // Retrieve the API key from the environment
     let apikey = get_env("APIKEY", "");
-    let vault_address = get_env("VAULT_ADDRESS", "http://0.0.0.0:8080");
+    let vault_address = get_env("VAULT_ADDRESS", "");
     let transit_key_length = match std::env::var("TRANSMIT_KEY_LENGTH") {
         Ok(value) => value.parse::<usize>().unwrap_or(TRANSIT_KEY_LENGTH),
         Err(_) => TRANSIT_KEY_LENGTH,

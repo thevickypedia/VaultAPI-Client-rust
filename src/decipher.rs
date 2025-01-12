@@ -7,7 +7,10 @@ use std::time::{SystemTime, UNIX_EPOCH};
 /// Decrypts a transit-encrypted payload.
 ///
 /// # Arguments
+/// * `apikey` - APIkey to derive the AES key.
 /// * `ciphertext` - A base64-encoded encrypted string.
+/// * `transit_key_length` - AES key length used for transit encryption.
+/// * `transit_time_bucket` - Interval for which the transit epoch remains a constant.
 ///
 /// # Returns
 /// * A `Result<Value, String>` containing the decrypted JSON payload or an error message.

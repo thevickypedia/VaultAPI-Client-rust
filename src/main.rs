@@ -1,7 +1,8 @@
-use vaultapi::decrypt_vault_secret;
 
 fn main() {
-    match decrypt_vault_secret() {
+    let metadata = vaultapi::constant::build_info();
+    let config = vaultapi::parser::arguments(&metadata);
+    match vaultapi::decrypt_vault_secret(config) {
         Ok(value) => {
             println!("{}", value);
         },

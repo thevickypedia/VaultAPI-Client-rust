@@ -1,7 +1,18 @@
 [package]
 name = "VaultAPI-Client"
-version = "0.1.0"
+version = "0.0.1"
+description = "Client application for VaultAPI server."
+license = "MIT"
+documentation = "https://docs.rs/VaultAPI-Client"
+homepage = "https://github.com/thevickypedia/VaultAPI-Client"
+repository = "https://github.com/thevickypedia/VaultAPI-Client"
+rust-version = "1.80.0"
+keywords = ["decipher-client", "vaultapi", "symmetric-encryption", "fernet-cryptography"]
+categories = ["algorithms", "authentication"]
+include = ["/src", "LICENSE"]
+exclude = [".github", ".gitignore", "README.md"]
 edition = "2021"
+authors = ["Vignesh Rao"]
 
 [lib]
 name = "vaultapi"
@@ -10,6 +21,9 @@ path = "src/lib.rs"
 [[bin]]
 name = "vaultapi"
 path = "src/main.rs"
+
+[package.metadata.docs.rs]
+rustdoc-args = ["--document-private-items"]
 
 [dependencies]
 base64 = "0.22.1"
