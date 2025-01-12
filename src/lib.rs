@@ -1,6 +1,9 @@
 mod parser;
 mod constant;
+mod request;
 
+use std::collections::HashMap;
+use std::process::exit;
 use base64::{engine::general_purpose, Engine as _};
 use ring::aead::{self, Aad, LessSafeKey, Nonce, UnboundKey};
 use ring::digest;
@@ -78,6 +81,49 @@ pub fn transit_decrypt(
 pub fn decrypt_vault_secret() -> Result<Value, String> {
     let metadata = constant::build_info();
     let config = parser::arguments(&metadata);
+    if config.get_secret.is_empty() && config.get_secrets.is_empty() && config.get_table.is_empty() {
+        if config.cipher.is_empty() {
+            println!("At least one API call or cipher text is required to proceed.");
+            exit(1)
+        }
+    }
+    if !config.get_secret.is_empty() {
+        let url = format!("{}/get-secret", &config.vault_address);
+
+        // Add custom headers
+        let mut headers = HashMap::new();
+        let bearer = format!("Bearer {}", &config.apikey);
+        headers.insert("Authorization".to_string(), bearer);
+        headers.insert("Accept".to_string(), "application/json".to_string());
+
+        // Add URL parameters
+        let mut params = HashMap::new();
+        params.insert("key".to_string(), config.get_secret);
+        params.insert("table_name".to_string(), config.table_name);
+
+        let response = request::make(&url, Some(headers), Some(params));
+        // Check if the result is the expected "detail" field, or handle accordingly
+        match response {
+            Value::Null => {
+                println!("No 'detail' key found in the response.");
+                exit(1)
+            },
+            Value::String(cipher_text) => {
+                return transit_decrypt(
+                    &config.apikey,
+                    &cipher_text,
+                    config.transit_key_length,
+                    config.transit_time_bucket
+                )
+            },
+            Value::Object(obj) => {
+                println!("Detail is an object: {:?}", obj);
+            },
+            _ => {
+                println!("Unexpected value returned: {:?}", response);
+            }
+        }
+    }
     transit_decrypt(
         &config.apikey,
         &config.cipher,

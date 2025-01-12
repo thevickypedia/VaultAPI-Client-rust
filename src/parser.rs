@@ -4,14 +4,35 @@ const TRANSIT_KEY_LENGTH: usize = 32;
 const TRANSIT_TIME_BUCKET: u64 = 60;
 
 pub struct Config {
-    pub cipher: String,
+    pub vault_address: String,
     pub apikey: String,
     pub transit_key_length: usize,
     pub transit_time_bucket: u64,
+
+    pub cipher: String,
+    pub table_name: String,
+    pub get_secret: String,
+    pub get_secrets: String,
+    pub get_table: String,
 }
 
 
-/// Parses and returns the command-line arguments.
+fn get_env(key: &str, default: &str) -> String {
+    let value = match std::env::var(key) {
+        Ok(value) => value,
+        Err(_) => {
+            if !default.is_empty() {
+                return default.to_string();
+            }
+            println!("{:} environment variable not set", key);
+            std::process::exit(1)
+        }
+    };
+    value
+}
+
+
+/// Parses and returns the command-line arguments and environment variables.
 ///
 /// # Returns
 ///
@@ -22,6 +43,10 @@ pub fn arguments(metadata: &constant::MetaData) -> Config {
     let mut version = false;
     let mut env_file = String::new();
     let mut cipher = String::new();
+    let mut table_name = String::new();
+    let mut get_secret = String::new();
+    let mut get_secrets = String::new();
+    let mut get_table = String::new();
 
     // Loop through the command-line arguments and parse them.
     let mut i = 1; // Start from the second argument (args[0] is the program name).
@@ -56,6 +81,42 @@ pub fn arguments(metadata: &constant::MetaData) -> Config {
                     std::process::exit(1)
                 }
             }
+            "--table" => {
+                i += 1; // Move to the next argument.
+                if i < args.len() {
+                    table_name = args[i].clone();
+                } else {
+                    println!("--get-secret requires a value.");
+                    std::process::exit(1)
+                }
+            }
+            "--get-secret" => {
+                i += 1; // Move to the next argument.
+                if i < args.len() {
+                    get_secret = args[i].clone();
+                } else {
+                    println!("--get-secret requires a value.");
+                    std::process::exit(1)
+                }
+            }
+            "--get-secrets" => {
+                i += 1; // Move to the next argument.
+                if i < args.len() {
+                    get_secrets = args[i].clone();
+                } else {
+                    println!("--get-secrets requires a value.");
+                    std::process::exit(1)
+                }
+            }
+            "--get-table" => {
+                i += 1; // Move to the next argument.
+                if i < args.len() {
+                    get_table = args[i].clone();
+                } else {
+                    println!("--get-table requires a value.");
+                    std::process::exit(1)
+                }
+            }
             _ => {
                 println!("Unknown argument: {}", args[i]);
                 std::process::exit(1)
@@ -77,13 +138,8 @@ pub fn arguments(metadata: &constant::MetaData) -> Config {
         .join(env_file);
     let _ = dotenv::from_path(env_file_path.as_path());
     // Retrieve the API key from the environment
-    let apikey = match std::env::var("APIKEY") {
-        Ok(value) => value,
-        Err(_) => {
-            println!("APIKEY environment variable not set");
-            std::process::exit(1)
-        }
-    };
+    let apikey = get_env("APIKEY", "");
+    let vault_address = get_env("VAULT_ADDRESS", "http://0.0.0.0:8080");
     let transit_key_length = match std::env::var("TRANSMIT_KEY_LENGTH") {
         Ok(value) => value.parse::<usize>().unwrap_or(TRANSIT_KEY_LENGTH),
         Err(_) => TRANSIT_KEY_LENGTH,
@@ -93,9 +149,14 @@ pub fn arguments(metadata: &constant::MetaData) -> Config {
         Err(_) => TRANSIT_TIME_BUCKET
     };
     Config {
-        cipher,
+        vault_address,
         apikey,
         transit_key_length,
         transit_time_bucket,
+        cipher,
+        table_name,
+        get_secret,
+        get_secrets,
+        get_table,
     }
 }
