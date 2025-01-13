@@ -1,6 +1,6 @@
 [package]
 name = "VaultAPI-Client"
-version = "0.0.1"
+version = "0.0.1-a"
 description = "Client application for VaultAPI server."
 license = "MIT"
 documentation = "https://docs.rs/VaultAPI-Client"
@@ -23,7 +23,7 @@ name = "vaultapi"
 path = "src/main.rs"
 
 [package.metadata.docs.rs]
-rustdoc-args = ["--document-private-items"]
+rustdoc-args = ["--no-deps", "--document-private-items"]
 
 [dependencies]
 base64 = "0.22.1"

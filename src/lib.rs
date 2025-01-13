@@ -1,6 +1,8 @@
+#![allow(rustdoc::bare_urls)]
+#![doc = include_str!("../README.md")]
 pub mod parser;
 pub mod constant;
-mod request;
+pub mod request;
 pub mod decipher;
 
 use serde_json::Value;
