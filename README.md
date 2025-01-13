@@ -2,6 +2,11 @@
 
 [![made-with-rust][rust-logo]][rust-src-page]
 
+[![crates.io][crates-logo]][crate]
+
+[![build][gh-logo]][build]
+[![none-shall-pass][nsp-logo]][nsp]
+
 Client application for [VaultAPI] server
 
 ### Environment Variables
@@ -21,6 +26,17 @@ Env vars can either be loaded from any plaintext files.
 - **--get-secret** - Get the value of a particular secret key.
 - **--get-secrets** - Get the values of multiple keys using a comma separated list.
 - **--get-table** - Get all the secrets stored in a table.
+
+## Crate
+[https://crates.io/crates/VaultAPI-Client][crate]
+
+### Cargo Docs - Official Runbook
+[https://docs.rs/VaultAPI-Client/latest/][docs]
+
+**Generator**
+```shell
+cargo doc --document-private-items --no-deps
+```
 
 ## Linting
 ### Requirement
@@ -42,3 +58,10 @@ Licensed under the [MIT License][license]
 [rust-logo]: https://img.shields.io/badge/Made%20with-Rust-black?style=for-the-badge&logo=Rust
 [license]: https://github.com/thevickypedia/VaultAPI-Client/blob/main/LICENSE
 [VaultAPI]: https://github.com/thevickypedia/VaultAPI
+[docs]: https://docs.rs/VaultAPI-Client/latest/
+[nsp]: https://github.com/thevickypedia/VaultAPI-Client/actions/workflows/none.yml
+[crate]: https://crates.io/crates/VaultAPI-Client
+[crates-logo]: https://img.shields.io/crates/v/VaultAPI-Client.svg
+[build]: https://github.com/thevickypedia/VaultAPI-Client/actions/workflows/rust.yml
+[gh-logo]: https://github.com/thevickypedia/VaultAPI-Client/actions/workflows/rust.yml/badge.svg
+[nsp-logo]: https://github.com/thevickypedia/VaultAPI-Client/actions/workflows/none.yml/badge.svg
