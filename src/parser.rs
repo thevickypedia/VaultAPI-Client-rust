@@ -1,10 +1,11 @@
+use reqwest::Url;
 use crate::constant;
 
 const TRANSIT_KEY_LENGTH: usize = 32;
 const TRANSIT_TIME_BUCKET: u64 = 60;
 
 pub struct Config {
-    pub vault_address: String,
+    pub vault_server: Url,
     pub apikey: String,
     pub transit_key_length: usize,
     pub transit_time_bucket: u64,
@@ -137,7 +138,12 @@ pub fn arguments(metadata: &constant::MetaData) -> Config {
     let _ = dotenv::from_path(env_file_path.as_path());
     // Retrieve the API key from the environment
     let apikey = get_env("APIKEY", "");
-    let vault_address = get_env("VAULT_ADDRESS", "");
+    let vault_server_env = get_env("VAULT_SERVER", "");
+    let vault_server = match Url::parse(&vault_server_env) {
+        Ok(url) => url,
+        Err(_e) => panic!("Failed to parse vault address"),
+    };
+    println!("vault address: {}", &vault_server);
     let transit_key_length = match std::env::var("TRANSMIT_KEY_LENGTH") {
         Ok(value) => value.parse::<usize>().unwrap_or(TRANSIT_KEY_LENGTH),
         Err(_) => TRANSIT_KEY_LENGTH,
@@ -147,7 +153,7 @@ pub fn arguments(metadata: &constant::MetaData) -> Config {
         Err(_) => TRANSIT_TIME_BUCKET
     };
     Config {
-        vault_address,
+        vault_server,
         apikey,
         transit_key_length,
         transit_time_bucket,

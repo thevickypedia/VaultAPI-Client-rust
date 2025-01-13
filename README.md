@@ -13,7 +13,7 @@ Client application for [VaultAPI] server
 Env vars can either be loaded from any plaintext files.
 
 - **ENV_FILE** - Plaintext file to read the env vars. Defaults to `.env`
-- **VAULT_ADDRESS** - VaultAPI server URL. Defaults to http://0.0.0.0:8080
+- **VAULT_SERVER** - VaultAPI server URL.
 - **APIKEY** - API key to authenticate the VaultAPI server.
 - **TRANSMIT_KEY_LENGTH** - AES key length for transit encryption. Defaults to `32`
 - **TRANSIT_TIME_BUCKET** - Interval for which the transit epoch should remain constant. Defaults to `60`

@@ -51,13 +51,13 @@ fn create_request_materials(config: &Config) -> RequestMaterials {
     }
 
     if !config.get_secrets.is_empty() {
-        url = format!("{}/get-secrets", &config.vault_address);
+        url = format!("{}get-secrets", &config.vault_server);
         params.insert("keys".to_string(), config.get_secrets.to_string());
     } else if !config.get_secret.is_empty() {
-        url = format!("{}/get-secret", &config.vault_address);
+        url = format!("{}get-secret", &config.vault_server);
         params.insert("key".to_string(), config.get_secret.to_string());
     } else if !config.get_table.is_empty() {
-        url = format!("{}/get-table", &config.vault_address);
+        url = format!("{}get-table", &config.vault_server);
     } else if config.table_name.is_empty() {
         println!("Required parameters unfilled!");
         exit(1)

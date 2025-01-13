@@ -1,6 +1,6 @@
 [package]
 name = "VaultAPI-Client"
-version = "0.0.1-a"
+version = "0.0.1"
 description = "Client application for VaultAPI server."
 license = "MIT"
 documentation = "https://docs.rs/VaultAPI-Client"
