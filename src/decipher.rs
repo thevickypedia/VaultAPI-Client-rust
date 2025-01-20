@@ -16,6 +16,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 /// * A `Result<Value, String>` containing the decrypted JSON payload or an error message.
 pub fn transit_decrypt(
     apikey: &String,
+    secret: &String,
     ciphertext: &String,
     transit_key_length: usize,
     transit_time_bucket: u64,
@@ -28,7 +29,7 @@ pub fn transit_decrypt(
     let epoch = epoch / transit_time_bucket;
 
     // Derive the AES key using SHA-256
-    let hash_input = format!("{}.{}", epoch, apikey);
+    let hash_input = format!("{}.{}.{}", epoch, apikey, secret);
     let hash_output = digest::digest(&digest::SHA256, hash_input.as_bytes());
     let aes_key = &hash_output.as_ref()[..transit_key_length];
 

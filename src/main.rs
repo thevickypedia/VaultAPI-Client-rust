@@ -1,4 +1,3 @@
-
 fn main() {
     let metadata = vaultapi::constant::build_info();
     let config = vaultapi::parser::arguments(&metadata);

@@ -4,12 +4,15 @@ use crate::constant;
 const TRANSIT_KEY_LENGTH: usize = 32;
 const TRANSIT_TIME_BUCKET: u64 = 60;
 
-pub struct Config {
+pub struct EnvConfig {
     pub vault_server: Url,
     pub apikey: String,
+    pub secret: String,
     pub transit_key_length: usize,
     pub transit_time_bucket: u64,
+}
 
+pub struct ArgConfig {
     pub cipher: String,
     pub table_name: String,
     pub get_secret: String,
@@ -31,12 +34,52 @@ fn get_env(key: &str, default: &str) -> String {
     }
 }
 
+pub fn load_env(env_file: &String) {
+    let env_file_path = std::env::current_dir()
+        .unwrap_or_default()
+        .join(env_file);
+    let _ = dotenv::from_path(env_file_path.as_path());
+}
+
+pub fn default_env_file() -> String {
+    std::env::var("env_file")
+        .unwrap_or(std::env::var("ENV_FILE")
+            .unwrap_or(".env".to_string()))
+}
+
+pub fn env_variables() -> EnvConfig {
+    load_env(&default_env_file());
+    // Retrieve the API key from the environment
+    let apikey = get_env("APIKEY", "");
+    let secret = get_env("SECRET", "");
+    let vault_server_env = get_env("VAULT_SERVER", "");
+    let vault_server = match Url::parse(&vault_server_env) {
+        Ok(url) => url,
+        Err(_e) => panic!("Failed to parse vault address"),
+    };
+    let transit_key_length = match std::env::var("TRANSMIT_KEY_LENGTH") {
+        Ok(value) => value.parse::<usize>().unwrap_or(TRANSIT_KEY_LENGTH),
+        Err(_) => TRANSIT_KEY_LENGTH,
+    };
+    let transit_time_bucket = match std::env::var("TRANSIT_TIME_BUCKET") {
+        Ok(value) => value.parse::<u64>().unwrap_or(TRANSIT_TIME_BUCKET),
+        Err(_) => TRANSIT_TIME_BUCKET
+    };
+    EnvConfig {
+        vault_server,
+        apikey,
+        secret,
+        transit_key_length,
+        transit_time_bucket,
+    }
+}
+
 
 /// Parses and returns the command-line arguments and environment variables.
 ///
 /// # Returns
 /// A String notion of the argument, `env_file` if present.
-pub fn arguments(metadata: &constant::MetaData) -> Config {
+pub fn arguments(metadata: &constant::MetaData) -> ArgConfig {
     let args: Vec<String> = std::env::args().collect();
 
     let mut version = false;
@@ -128,35 +171,10 @@ pub fn arguments(metadata: &constant::MetaData) -> Config {
         std::process::exit(0)
     }
     if env_file.is_empty() {
-        env_file = std::env::var("env_file")
-            .unwrap_or(std::env::var("ENV_FILE")
-                .unwrap_or(".env".to_string()));
+        env_file = default_env_file();
     }
-    let env_file_path = std::env::current_dir()
-        .unwrap_or_default()
-        .join(env_file);
-    let _ = dotenv::from_path(env_file_path.as_path());
-    // Retrieve the API key from the environment
-    let apikey = get_env("APIKEY", "");
-    let vault_server_env = get_env("VAULT_SERVER", "");
-    let vault_server = match Url::parse(&vault_server_env) {
-        Ok(url) => url,
-        Err(_e) => panic!("Failed to parse vault address"),
-    };
-    println!("vault address: {}", &vault_server);
-    let transit_key_length = match std::env::var("TRANSMIT_KEY_LENGTH") {
-        Ok(value) => value.parse::<usize>().unwrap_or(TRANSIT_KEY_LENGTH),
-        Err(_) => TRANSIT_KEY_LENGTH,
-    };
-    let transit_time_bucket = match std::env::var("TRANSIT_TIME_BUCKET") {
-        Ok(value) => value.parse::<u64>().unwrap_or(TRANSIT_TIME_BUCKET),
-        Err(_) => TRANSIT_TIME_BUCKET
-    };
-    Config {
-        vault_server,
-        apikey,
-        transit_key_length,
-        transit_time_bucket,
+    load_env(&env_file);
+    ArgConfig {
         cipher,
         table_name,
         get_secret,
