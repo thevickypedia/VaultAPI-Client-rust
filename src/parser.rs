@@ -1,5 +1,8 @@
-use reqwest::Url;
 use crate::constant;
+use crate::enums;
+use crate::util;
+use reqwest::blocking::Client;
+use reqwest::Url;
 
 const TRANSIT_KEY_LENGTH: usize = 32;
 const TRANSIT_TIME_BUCKET: u64 = 60;
@@ -20,7 +23,6 @@ pub struct ArgConfig {
     pub get_table: String,
 }
 
-
 fn get_env(key: &str, default: &str) -> String {
     match std::env::var(key) {
         Ok(value) => value,
@@ -35,16 +37,34 @@ fn get_env(key: &str, default: &str) -> String {
 }
 
 pub fn load_env(env_file: &String) {
-    let env_file_path = std::env::current_dir()
-        .unwrap_or_default()
-        .join(env_file);
+    let env_file_path = std::env::current_dir().unwrap_or_default().join(env_file);
     let _ = dotenv::from_path(env_file_path.as_path());
 }
 
 pub fn default_env_file() -> String {
-    std::env::var("env_file")
-        .unwrap_or(std::env::var("ENV_FILE")
-            .unwrap_or(".env".to_string()))
+    std::env::var("env_file").unwrap_or(std::env::var("ENV_FILE").unwrap_or(".env".to_string()))
+}
+
+fn health_check(server_url: &Url) {
+    let client = Client::new();
+    let url = util::urljoin(&[
+        server_url.as_ref(),
+        enums::EndpointMapping::Health.as_str(),
+    ]);
+    let request = client.get(url);
+    match request.send() {
+        Ok(init_response) => match init_response.error_for_status() {
+            Ok(_) => {}
+            Err(err) => {
+                println!("{}", err);
+                std::process::exit(1)
+            }
+        },
+        Err(err) => {
+            println!("{}", err);
+            std::process::exit(1)
+        }
+    }
 }
 
 pub fn env_variables() -> EnvConfig {
@@ -55,15 +75,19 @@ pub fn env_variables() -> EnvConfig {
     let vault_server_env = get_env("VAULT_SERVER", "");
     let vault_server = match Url::parse(&vault_server_env) {
         Ok(url) => url,
-        Err(_e) => panic!("Failed to parse vault address"),
+        Err(_) => {
+            println!("Failed to parse vault address");
+            std::process::exit(1)
+        }
     };
+    health_check(&vault_server);
     let transit_key_length = match std::env::var("TRANSMIT_KEY_LENGTH") {
         Ok(value) => value.parse::<usize>().unwrap_or(TRANSIT_KEY_LENGTH),
         Err(_) => TRANSIT_KEY_LENGTH,
     };
     let transit_time_bucket = match std::env::var("TRANSIT_TIME_BUCKET") {
         Ok(value) => value.parse::<u64>().unwrap_or(TRANSIT_TIME_BUCKET),
-        Err(_) => TRANSIT_TIME_BUCKET
+        Err(_) => TRANSIT_TIME_BUCKET,
     };
     EnvConfig {
         vault_server,
@@ -73,7 +97,6 @@ pub fn env_variables() -> EnvConfig {
         transit_time_bucket,
     }
 }
-
 
 /// Parses and returns the command-line arguments and environment variables.
 ///
@@ -98,7 +121,8 @@ pub fn arguments(metadata: &constant::MetaData) -> ArgConfig {
                 let helper = "VaultAPI-Client takes the arguments, --env_file and --version/-v\n\n\
                 --env_file: Custom filename to load the environment variables. Defaults to '.env'\n\
                 --cipher: Cipher text to decrypt\n\
-                --version: Get the package version.\n".to_string();
+                --version: Get the package version.\n"
+                    .to_string();
                 println!("Usage: {} [OPTIONS]\n\n{}", args[0], helper);
                 std::process::exit(0)
             }

@@ -22,3 +22,22 @@ impl EndpointMapping {
         }
     }
 }
+
+#[derive(Debug)]
+pub enum Method {
+    Get,
+    Put,
+    Delete,
+    Post,
+}
+
+impl PartialEq for Method {
+    fn eq(&self, other: &Self) -> bool {
+        matches!((self, other),
+            (Method::Get, Method::Get) |
+            (Method::Post, Method::Post) |
+            (Method::Put, Method::Put) |
+            (Method::Delete, Method::Delete)
+        )
+    }
+}

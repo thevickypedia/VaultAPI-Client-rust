@@ -5,10 +5,13 @@ use reqwest::blocking::Client;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::process::exit;
+use crate::enums::Method;
 
-pub struct RequestMaterials {
+pub struct PreparedRequest {
     pub url: String,
+    pub method: Method,
     pub params: HashMap<String, String>,
+    pub payload: HashMap<String, Value>,
     pub headers: HashMap<String, String>,
 }
 
@@ -34,7 +37,7 @@ pub fn auth_headers(apikey: &String) -> HashMap<String, String> {
 ///
 /// # Returns
 /// * A `RequestMaterials` struct containing auth headers, query parameters, and the request URL.
-fn create_request_materials(arg_config: &ArgConfig, env_config: &EnvConfig) -> RequestMaterials {
+fn create_request_materials(arg_config: &ArgConfig, env_config: &EnvConfig) -> PreparedRequest {
     // Add URL parameters
     let mut url = String::new();
     let mut params = HashMap::new();
@@ -60,9 +63,11 @@ fn create_request_materials(arg_config: &ArgConfig, env_config: &EnvConfig) -> R
         println!("Required parameters unfilled!");
         exit(1)
     }
-    RequestMaterials {
+    PreparedRequest {
         url,
+        method: Method::Get,
         params,
+        payload: HashMap::new(),
         headers: auth_headers(&env_config.apikey),
     }
 }
@@ -102,8 +107,8 @@ pub fn decrypt_response(env_config: &EnvConfig, response: &Value) -> Result<Valu
 /// # Returns
 /// * A `Result<Value, String>` containing deciphered content.
 pub fn server_connection(arg_config: &ArgConfig, env_config: &EnvConfig) -> Result<Value, String> {
-    let request = create_request_materials(arg_config, env_config);
-    let response = make_request(&request.url, Some(request.headers), Some(request.params));
+    let prepared_request = create_request_materials(arg_config, env_config);
+    let response = make_request(prepared_request);
     decrypt_response(env_config, &response)
 }
 
@@ -117,29 +122,37 @@ pub fn server_connection(arg_config: &ArgConfig, env_config: &EnvConfig) -> Resu
 /// # Returns
 /// * A `Value` object containing the server response.
 pub fn make_request(
-    server_url: &str,
-    headers: Option<HashMap<String, String>>,
-    params: Option<HashMap<String, String>>,
+    prepared_request: PreparedRequest
 ) -> Value {
     // Create a reqwest client
     let client = Client::new();
 
     // Build the URL with parameters if provided
     // todo: Remove expect and construct a match
-    let mut url = reqwest::Url::parse(server_url).expect("Invalid URL");
-    if let Some(query_params) = params {
-        let query: Vec<(String, String)> = query_params.into_iter().collect();
+    let mut url = reqwest::Url::parse(&prepared_request.url).expect("Invalid URL");
+    if !prepared_request.params.is_empty() {
+        let query: Vec<(String, String)> = prepared_request.params.into_iter().collect();
         url.query_pairs_mut().extend_pairs(query);
     }
 
     // Prepare the request builder
-    let mut request = client.get(url);
+    let mut request = match prepared_request.method {
+        Method::Get => client.get(url),
+        Method::Post => client.post(url),
+        Method::Put => client.put(url),
+        Method::Delete => client.delete(url),
+    };
 
     // Add headers if provided
-    if let Some(custom_headers) = headers {
-        for (key, value) in custom_headers {
+    if !prepared_request.headers.is_empty() {
+        for (key, value) in prepared_request.headers {
             request = request.header(&key, value);
         }
+    }
+
+    // Add JSON payload if provided
+    if !prepared_request.payload.is_empty() {
+        request = request.json(&prepared_request.payload)
     }
 
     // Make the request
@@ -170,7 +183,7 @@ pub fn make_request(
             }
         }
         Err(err) => {
-            println!("Failed to fetch data from {}: {}", server_url, err);
+            println!("Failed to fetch data from {}: {}", prepared_request.url, err);
             exit(1);
         }
     }
