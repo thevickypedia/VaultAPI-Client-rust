@@ -18,6 +18,7 @@ jobs:
       contents: write
     outputs:
       release-id: ${{ steps.create-release.outputs.release_id }}
+      release-tag: ${{ steps.create-release.outputs.release_tag }}
       release-flag: ${{ steps.set-release-flag.outputs.release_flag }}
       pkg-name: ${{ steps.get-package-info.outputs.pkg_name }}
       bin-name: ${{ steps.get-package-info.outputs.bin_name }}
@@ -69,6 +70,7 @@ jobs:
         id: create-release
         run: |
           release_tag="v${{ env.pkg_version }}"
+          echo "release_tag=${release_tag}" >> "$GITHUB_OUTPUT"
           cargo_prerelease=("alpha" "beta" "rc")
           prerelease=false
           for cargo_pre in "${cargo_prerelease[@]}"; do
@@ -129,6 +131,17 @@ jobs:
       contents: write
 
     steps:
+      - name: Release ID Propagation
+        id: release-id-check
+        run: |
+          if [ -n "${{ needs.release.outputs.release-id }}" ]; then
+            echo "Release ID propagated: ${{ needs.release.outputs.release-id }}"
+          else
+            echo "Release ID propagation failed. Exiting.."
+            exit 1
+          fi
+          echo "start_time=$(date +%s)" >> "$GITHUB_ENV"
+        shell: bash
       - name: Checkout Repo
         uses: actions/checkout@v4
       - name: Update Rust
@@ -206,6 +219,16 @@ jobs:
           -H "Content-Type: application/octet-stream" \
           --data-binary @"${{ matrix.platform.name }}" \
           "https://uploads.github.com/repos/${{ github.repository }}/releases/${{ needs.release.outputs.release-id }}/assets?name=${{ matrix.platform.name }}"
+        shell: bash
+
+      - name: Runtime Analyzer
+        run: |
+          start=${{ env.start_time }}
+          end=$(date +%s)
+          time_taken=$((end-start))
+          url="${{ github.server_url }}/${{ github.repository }}/releases/download/${{ needs.release.outputs.release-tag }}/${{ matrix.platform.name }}"
+          hyperlink="[${{ matrix.platform.release_for }}]($url)"
+          echo "🚀 Built for $hyperlink in $time_taken seconds" >> $GITHUB_STEP_SUMMARY
         shell: bash
 
   publish-crate:
