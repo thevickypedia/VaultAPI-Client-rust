@@ -1,11 +1,11 @@
 #![allow(rustdoc::bare_urls)]
 #![doc = include_str!("../README.md")]
-pub mod routes;
 pub mod constant;
 pub mod decipher;
 mod enums;
 pub mod parser;
 pub mod request;
+pub mod routes;
 mod util;
 
 use serde_json::Value;

@@ -7,6 +7,7 @@ pub enum EndpointMapping {
     PutSecret,
     ListTables,
     CreateTable,
+    DeleteTable,
     DeleteSecret,
 }
 
@@ -20,6 +21,7 @@ impl EndpointMapping {
             EndpointMapping::PutSecret => "/put-secret",
             EndpointMapping::ListTables => "/list-tables",
             EndpointMapping::CreateTable => "/create-table",
+            EndpointMapping::DeleteTable => "/delete-table",
             EndpointMapping::DeleteSecret => "/delete-secret",
         }
     }
@@ -37,11 +39,12 @@ pub enum Method {
 /// Implements the match object to validate as conditions.
 impl PartialEq for Method {
     fn eq(&self, other: &Self) -> bool {
-        matches!((self, other),
-            (Method::Get, Method::Get) |
-            (Method::Post, Method::Post) |
-            (Method::Put, Method::Put) |
-            (Method::Delete, Method::Delete)
+        matches!(
+            (self, other),
+            (Method::Get, Method::Get)
+                | (Method::Post, Method::Post)
+                | (Method::Put, Method::Put)
+                | (Method::Delete, Method::Delete)
         )
     }
 }

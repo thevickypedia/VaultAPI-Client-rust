@@ -1,11 +1,11 @@
 use crate::decipher;
+use crate::enums::Method;
 use crate::parser::ArgConfig;
 use crate::parser::EnvConfig;
 use reqwest::blocking::Client;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::process::exit;
-use crate::enums::Method;
 
 pub struct PreparedRequest {
     pub url: String,
@@ -128,9 +128,7 @@ pub fn server_connection(arg_config: &ArgConfig, env_config: &EnvConfig) -> Resu
 ///
 /// # Returns
 /// * A `Value` object containing the server response.
-pub fn make_request(
-    prepared_request: PreparedRequest
-) -> Value {
+pub fn make_request(prepared_request: PreparedRequest) -> Value {
     // Create a reqwest client
     let client = Client::new();
 
@@ -140,7 +138,7 @@ pub fn make_request(
         Err(_) => {
             eprintln!("Invalid URL: {}", prepared_request.url);
             exit(1)
-        },
+        }
     };
     if !prepared_request.params.is_empty() {
         let query: Vec<(String, String)> = prepared_request.params.into_iter().collect();
@@ -195,7 +193,10 @@ pub fn make_request(
             }
         }
         Err(err) => {
-            println!("Failed to fetch data from {}: {}", prepared_request.url, err);
+            println!(
+                "Failed to fetch data from {}: {}",
+                prepared_request.url, err
+            );
             exit(1);
         }
     }

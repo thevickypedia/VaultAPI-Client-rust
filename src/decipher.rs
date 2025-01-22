@@ -24,7 +24,7 @@ pub fn transit_decrypt(
     // Compute the current epoch bucket
     let epoch = match SystemTime::now().duration_since(UNIX_EPOCH) {
         Ok(duration) => duration.as_secs(),
-        Err(_) => return Err("System time is before the UNIX epoch".into())
+        Err(_) => return Err("System time is before the UNIX epoch".into()),
     };
     let epoch = epoch / transit_time_bucket;
 
@@ -36,7 +36,7 @@ pub fn transit_decrypt(
     // Decode the base64-encoded ciphertext
     let ciphertext_bytes = match general_purpose::STANDARD.decode(ciphertext) {
         Ok(bytes) => bytes,
-        Err(_) => return Err("Failed to decode ciphertext".into())
+        Err(_) => return Err("Failed to decode ciphertext".into()),
     };
 
     // Ensure the ciphertext is long enough

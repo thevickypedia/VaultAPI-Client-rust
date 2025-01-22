@@ -28,7 +28,10 @@ pub fn build_info() -> MetaData {
     MetaData {
         crate_name: env!("CARGO_CRATE_NAME").to_string(),
         manifest_dir: env!("CARGO_MANIFEST_DIR").to_string(),
-        authors: env!("CARGO_PKG_AUTHORS").split(',').map(String::from).collect(),
+        authors: env!("CARGO_PKG_AUTHORS")
+            .split(',')
+            .map(String::from)
+            .collect(),
         description: env!("CARGO_PKG_DESCRIPTION").to_string(),
         homepage: env!("CARGO_PKG_HOMEPAGE").to_string(),
         pkg_name: env!("CARGO_PKG_NAME").to_string(),

@@ -134,7 +134,10 @@ pub fn put_secret(secrets: &HashMap<String, String>, table_name: &String) -> Val
     let sec: Value = to_value(secrets.to_owned()).unwrap();
     let mut payload = HashMap::new();
     payload.insert("secrets".to_string(), sec);
-    payload.insert("table_name".to_string(), Value::String(table_name.to_string()));
+    payload.insert(
+        "table_name".to_string(),
+        Value::String(table_name.to_string()),
+    );
     let request = request::PreparedRequest {
         url,
         method: Method::Put,
@@ -165,7 +168,10 @@ pub fn delete_secret(key: &String, table_name: &String) -> Value {
         params: HashMap::new(),
         payload: HashMap::from([
             ("key".to_string(), Value::String(key.to_string())),
-            ("table_name".to_string(), Value::String(table_name.to_string())),
+            (
+                "table_name".to_string(),
+                Value::String(table_name.to_string()),
+            ),
         ]),
         headers: request::auth_headers(&env_config.apikey),
     };
@@ -186,5 +192,22 @@ pub fn create_table(table_name: &String) -> Value {
         enums::EndpointMapping::CreateTable.as_str(),
     ]);
     let request = table_request(url, Method::Post, table_name, &env_config);
+    request::make_request(request)
+}
+
+/// Deletes an existing table.
+///
+/// # Arguments
+/// * `table_name` - Table name that has to be deleted.
+///
+/// # Returns
+/// * A `Value` object with response from the server.
+pub fn delete_table(table_name: &String) -> Value {
+    let env_config = parser::env_variables();
+    let url = util::urljoin(&[
+        env_config.vault_server.as_ref(),
+        enums::EndpointMapping::DeleteTable.as_str(),
+    ]);
+    let request = table_request(url, Method::Delete, table_name, &env_config);
     request::make_request(request)
 }
