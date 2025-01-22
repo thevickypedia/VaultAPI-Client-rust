@@ -4,9 +4,12 @@ use crate::util;
 use reqwest::blocking::Client;
 use reqwest::Url;
 
+/// Default transit key length. This will be the AES key length for transit encryption.
 const TRANSIT_KEY_LENGTH: usize = 32;
+/// Default transit time bucket. This will be the interval for which the transit epoch will remain constant.
 const TRANSIT_TIME_BUCKET: u64 = 60;
 
+/// Struct to construct environment variables.
 pub struct EnvConfig {
     pub vault_server: Url,
     pub apikey: String,
@@ -15,6 +18,7 @@ pub struct EnvConfig {
     pub transit_time_bucket: u64,
 }
 
+/// Struct to construct the commandline arguments.
 pub struct ArgConfig {
     pub cipher: String,
     pub table_name: String,
@@ -23,6 +27,14 @@ pub struct ArgConfig {
     pub get_table: String,
 }
 
+/// Function to retrieve environment variables.
+///
+/// # Arguments
+/// * `key` - Key to retrieve the environment variables.
+/// * `default` - Default value if env var is not found.
+///
+/// # Returns
+/// * Retrieved environment variable as a ``String`` object.
 fn get_env(key: &str, default: &str) -> String {
     match std::env::var(key) {
         Ok(value) => value,
@@ -36,21 +48,30 @@ fn get_env(key: &str, default: &str) -> String {
     }
 }
 
+/// Load environment variables from an env file.
+///
+/// # Arguments
+/// * `env_file` - Dot env filename/filepath.
 pub fn load_env(env_file: &String) {
     let env_file_path = std::env::current_dir().unwrap_or_default().join(env_file);
     let _ = dotenv::from_path(env_file_path.as_path());
 }
 
+/// Returns the default env filename.
+///
+/// # Returns
+/// * ``.env`` as the default filename.
 pub fn default_env_file() -> String {
     std::env::var("env_file").unwrap_or(std::env::var("ENV_FILE").unwrap_or(".env".to_string()))
 }
 
+/// Function to validate the health check of the server endpoint.
+///
+/// # Arguments
+/// * `server_url` - Server URL to perform the health check.
 fn health_check(server_url: &Url) {
     let client = Client::new();
-    let url = util::urljoin(&[
-        server_url.as_ref(),
-        enums::EndpointMapping::Health.as_str(),
-    ]);
+    let url = util::urljoin(&[server_url.as_ref(), enums::EndpointMapping::Health.as_str()]);
     let request = client.get(url);
     match request.send() {
         Ok(init_response) => match init_response.error_for_status() {
@@ -67,6 +88,10 @@ fn health_check(server_url: &Url) {
     }
 }
 
+/// Function to retrieve environment variables and load it as an ``EnvConfig`` object.
+///
+/// # Returns
+/// * Retrieved environment variable as an ``EnvConfig`` object.
 pub fn env_variables() -> EnvConfig {
     load_env(&default_env_file());
     // Retrieve the API key from the environment
@@ -98,10 +123,13 @@ pub fn env_variables() -> EnvConfig {
     }
 }
 
-/// Parses and returns the command-line arguments and environment variables.
+/// Parses and returns the command-line arguments.
+///
+/// # Arguments
+/// * `metadata` - Metadata object loaded with cargo information.
 ///
 /// # Returns
-/// A String notion of the argument, `env_file` if present.
+/// * Commandline arguments loaded as an ``ArgConfig`` object.
 pub fn arguments(metadata: &constant::MetaData) -> ArgConfig {
     let args: Vec<String> = std::env::args().collect();
 

@@ -1,3 +1,4 @@
+/// Enum to load the endpoint mapping.
 #[derive(Debug)]
 pub enum EndpointMapping {
     Health,
@@ -9,6 +10,7 @@ pub enum EndpointMapping {
     DeleteSecret,
 }
 
+/// Implements the endpoint mapping enum to the appropriate API endpoints.
 impl EndpointMapping {
     pub fn as_str(&self) -> &str {
         match self {
@@ -23,6 +25,7 @@ impl EndpointMapping {
     }
 }
 
+/// Enum to load the API methods.
 #[derive(Debug)]
 pub enum Method {
     Get,
@@ -31,6 +34,7 @@ pub enum Method {
     Post,
 }
 
+/// Implements the match object to validate as conditions.
 impl PartialEq for Method {
     fn eq(&self, other: &Self) -> bool {
         matches!((self, other),

@@ -33,7 +33,8 @@ pub fn auth_headers(apikey: &String) -> HashMap<String, String> {
 /// Constructs the required fields to make a request.
 ///
 /// # Arguments
-/// * `config` - Config object to retrieve environment variables, and command line arguments.
+/// * `env_config` - Config object to retrieve environment variables.
+/// * `arg_config` - Config object to retrieve CLI arguments.
 ///
 /// # Returns
 /// * A `RequestMaterials` struct containing auth headers, query parameters, and the request URL.
@@ -72,7 +73,14 @@ fn create_request_materials(arg_config: &ArgConfig, env_config: &EnvConfig) -> P
     }
 }
 
-/// Process the response from the server's detail object.
+/// Process the response from the server's detail object and decrypt the response text.
+///
+/// # Arguments
+/// * `env_config` - Config object to retrieve environment variables.
+/// * `arg_config` - Config object to retrieve CLI arguments.
+///
+/// # Returns
+/// * A `Result<Value, String>` containing deciphered content.
 pub fn decrypt_response(env_config: &EnvConfig, response: &Value) -> Result<Value, String> {
     // Check if the result is the expected "detail" field, or handle accordingly
     match response {
@@ -102,7 +110,8 @@ pub fn decrypt_response(env_config: &EnvConfig, response: &Value) -> Result<Valu
 /// Function to create a server request and process the response.
 ///
 /// # Arguments
-/// * `config` - Config object to retrieve environment variables, and command line arguments.
+/// * `env_config` - Config object to retrieve environment variables.
+/// * `arg_config` - Config object to retrieve CLI arguments.
 ///
 /// # Returns
 /// * A `Result<Value, String>` containing deciphered content.
@@ -115,9 +124,7 @@ pub fn server_connection(arg_config: &ArgConfig, env_config: &EnvConfig) -> Resu
 /// Function to make a `GET` request to the server.
 ///
 /// # Arguments
-/// * `server_url` - Server URL.
-/// * `headers` - Authentication headers.
-/// * `params` - Query parameters.
+/// * `prepared_request` - Prepared request object.
 ///
 /// # Returns
 /// * A `Value` object containing the server response.
@@ -128,8 +135,13 @@ pub fn make_request(
     let client = Client::new();
 
     // Build the URL with parameters if provided
-    // todo: Remove expect and construct a match
-    let mut url = reqwest::Url::parse(&prepared_request.url).expect("Invalid URL");
+    let mut url = match reqwest::Url::parse(&prepared_request.url) {
+        Ok(url) => url,
+        Err(_) => {
+            eprintln!("Invalid URL: {}", prepared_request.url);
+            exit(1)
+        },
+    };
     if !prepared_request.params.is_empty() {
         let query: Vec<(String, String)> = prepared_request.params.into_iter().collect();
         url.query_pairs_mut().extend_pairs(query);

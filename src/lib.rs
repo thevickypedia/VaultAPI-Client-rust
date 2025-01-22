@@ -12,6 +12,9 @@ use serde_json::Value;
 
 /// Decrypts the ciphered text into JSON object.
 ///
+/// # Arguments
+/// * `arg_config` - Config object to retrieve CLI arguments.
+///
 /// # Returns
 /// * A `Result<Value, String>` containing deciphered content.
 pub fn decrypt_vault_secret(arg_config: parser::ArgConfig) -> Result<Value, String> {

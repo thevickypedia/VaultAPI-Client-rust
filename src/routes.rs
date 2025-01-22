@@ -5,6 +5,16 @@ use serde_json::{to_value, Value};
 use std::collections::HashMap;
 use std::process::exit;
 
+/// Function to generate a table request, with just the table name as query param.
+///
+/// # Arguments
+/// * `url` - API endpoint Url.
+/// * `method` - Method enum.
+/// * `table_name` - Table name.
+/// * `env_config` - Environment variables' configuration.
+///
+/// # Returns
+/// * A `PreparedRequest` struct containing the request essentials.
 fn table_request(
     url: String,
     method: Method,
@@ -20,14 +30,22 @@ fn table_request(
     }
 }
 
-pub fn get_secret(key: &String, table: &String) -> Result<Value, String> {
+/// Retrieve secret(s) from the server.
+///
+/// # Arguments
+/// * `key` - Secret key for the which the value has to be retrieved.
+/// * `table_name` - Table name where the secret is stored.
+///
+/// # Returns
+/// * A `Result<Value, String>` object with decrypted payload.
+pub fn get_secret(key: &String, table_name: &String) -> Result<Value, String> {
     let env_config = parser::env_variables();
     let url = util::urljoin(&[
         env_config.vault_server.as_ref(),
         enums::EndpointMapping::GetSecret.as_str(),
     ]);
     let params = HashMap::from([
-        ("table_name".to_string(), table.to_string()),
+        ("table_name".to_string(), table_name.to_string()),
         ("key".to_string(), key.to_string()),
     ]);
     let request = request::PreparedRequest {
@@ -41,17 +59,28 @@ pub fn get_secret(key: &String, table: &String) -> Result<Value, String> {
     request::decrypt_response(&env_config, &response)
 }
 
-pub fn get_table(table: &String) -> Result<Value, String> {
+/// Retrieve ALL the secrets stored in a particular table from the server.
+///
+/// # Arguments
+/// * `table_name` - Table name where the secrets are stored.
+///
+/// # Returns
+/// * A `Result<Value, String>` object with decrypted payload.
+pub fn get_table(table_name: &String) -> Result<Value, String> {
     let env_config = parser::env_variables();
     let url = util::urljoin(&[
         env_config.vault_server.as_ref(),
         enums::EndpointMapping::GetTable.as_str(),
     ]);
-    let request = table_request(url, Method::Get, table, &env_config);
+    let request = table_request(url, Method::Get, table_name, &env_config);
     let response = request::make_request(request);
     request::decrypt_response(&env_config, &response)
 }
 
+/// List all available table names in the server.
+///
+/// # Returns
+/// * A `Vec<String>` with all the table names.
 pub fn list_tables() -> Vec<String> {
     let env_config = parser::env_variables();
     let url = util::urljoin(&[
@@ -88,6 +117,14 @@ pub fn list_tables() -> Vec<String> {
     }
 }
 
+/// Creates or updates a secret value stored in a table.
+///
+/// # Arguments
+/// * `secrets` - HashMap of secrets as key-value pairs.
+/// * `table_name` - Table name where the secret has to be added/updated.
+///
+/// # Returns
+/// * A `Value` object with response from the server.
 pub fn put_secret(secrets: &HashMap<String, String>, table_name: &String) -> Value {
     let env_config = parser::env_variables();
     let url = util::urljoin(&[
@@ -108,6 +145,14 @@ pub fn put_secret(secrets: &HashMap<String, String>, table_name: &String) -> Val
     request::make_request(request)
 }
 
+/// Deletes a secret stored in a table.
+///
+/// # Arguments
+/// * `key` - Secret key that has to be deleted.
+/// * `table_name` - Table name where the secret exists.
+///
+/// # Returns
+/// * A `Value` object with response from the server.
 pub fn delete_secret(key: &String, table_name: &String) -> Value {
     let env_config = parser::env_variables();
     let url = util::urljoin(&[
@@ -127,6 +172,13 @@ pub fn delete_secret(key: &String, table_name: &String) -> Value {
     request::make_request(request)
 }
 
+/// Creates a new table.
+///
+/// # Arguments
+/// * `table_name` - Table name that has to be created.
+///
+/// # Returns
+/// * A `Value` object with response from the server.
 pub fn create_table(table_name: &String) -> Value {
     let env_config = parser::env_variables();
     let url = util::urljoin(&[
