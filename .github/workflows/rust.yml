@@ -42,7 +42,7 @@ jobs:
         run: |
           current_version=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
           # latest_version=$(curl -s https://crates.io/api/v1/crates/${{ env.pkg_name }} | jq -r '.versions[0].num')
-          versions=$(curl -s https://crates.io/api/v1/crates/VaultAPI-Client | jq -r '.versions | map(.num)')
+          versions=$(curl -s https://crates.io/api/v1/crates/${{ env.pkg_name }} | jq -r '.versions | map(.num)')
           latest_version=$(echo $versions | jq -r '.[0]')
           echo "Current Package Version: ${current_version}"
           echo "Latest Package Version: $latest_version"
